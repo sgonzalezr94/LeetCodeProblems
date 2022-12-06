@@ -48,10 +48,14 @@ class Solution:
 
                 else:
                     tmp_list.append(line.strip())
+            # We need to do this to include the last triplet since idx % 3 == 0 and idx != 0 validation can't be performed anymore
+            total_sum += self.__get_priority(
+                self.__extract_item_type_per_group(tmp_list)
+            )
         return total_sum
 
 
 CHARS_STR = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 sol = Solution(char_total_str=CHARS_STR, day_number=3)
 ans = sol.total_priorities_sum_per_group(sol.day_number)
-print(ans)
+# 2363
