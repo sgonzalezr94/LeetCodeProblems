@@ -1,64 +1,69 @@
 from typing import List
 from json import loads
+import re
 
 
 class Solution:
     def __init__(self, day: int) -> None:
         self.day_number = day
-        self.stacks_dict = dict()
-        self.movements = list()
+        self.stacks = []
+        self.movements = []
 
-    def _read_input(self):
-        with open(f"inputs/{self.day_number}.txt", "r") as input:
-            data = [line.strip().split() for line in input.readlines()]
-            stack_positions, movements = data[0:8], data[10:]
-            self.__create_stack_dict(stack_positions)
-            self.movements = movements
+    def __read_file(self):
+        with open(f"inputs/{self.day_number}.txt", "r") as file:
+            file_data = file.read()
+            definition, moves = file_data.split("\n\n")
+            containers = []
 
-    def __create_stack_dict(self, stack_configuration: List[str]):
-        self.stacks_dict = {idx: list() for idx in range(len(stack_configuration[0]))}
-        for stack_column in stack_configuration:
-            self.stacks_dict[0].append(stack_column[0])
-            self.stacks_dict[1].append(stack_column[1])
-            self.stacks_dict[2].append(stack_column[2])
-            self.stacks_dict[3].append(stack_column[3])
-            self.stacks_dict[4].append(stack_column[4])
-            self.stacks_dict[5].append(stack_column[5])
-            self.stacks_dict[6].append(stack_column[6])
-            self.stacks_dict[7].append(stack_column[7])
-            self.stacks_dict[8].append(stack_column[8])
-        for dict in self.stacks_dict:
-            self.stacks_dict[dict].reverse()
+            for line in definition.split("\n")[:-1]:
+                replace = " [0]"
 
-    def __move_elements_from_stack(
-        self, number_of_elements: int, from_stack: int, to_stack: int
-    ) -> dict:
-        for _ in range(number_of_elements):
-            try:
-                self.stacks_dict[to_stack - 1].append(
-                    self.stacks_dict[from_stack - 1].pop()
-                )
-            except Exception as e:
-                print(e)
+                if line[0] == " ":
+                    replace = "[0] "
 
-        return self.stacks_dict
+                containers.append(line.replace("    ", replace).split())
 
-    def supply_stacks_arrangement(self) -> str:
-        print(self.movements)
-        for movement in self.movements:
-            self.__move_elements_from_stack(
-                int(movement[1]), int(movement[3]), int(movement[5])
-            )
-        print(self.stacks_dict)
-        response = ""
-        for stack in self.stacks_dict:
-            response += self.stacks_dict[stack].pop()[1]
-        response = response.replace("0", "")
-        print(response)
-        return response
+            max_len = max([len(line) for line in containers])
+
+            for line in containers:
+                t = max_len - len(line)
+                if t > 0:
+                    line += ["[0]"] * t
+            t = []
+
+            for i in range(len(containers[0])):
+                y = []
+                for j in range(len(containers)):
+                    if containers[j][i] != "[0]":
+                        y.append(containers[j][i])
+                t.append(y)
+
+            pattern = r"^move (\d+) from (\d+) to (\d+)$"
+            instruction_list = [
+                list(map(lambda x: int(x), re.findall(pattern, line)[0]))
+                for line in moves.strip().split("\n")
+            ]
+            self.stacks = t
+            self.movements = instruction_list
+            return t, instruction_list
+
+    def supply_stacks_arrangement(self, reverse) -> str:
+        self.__read_file()
+        for instruction in self.movements:
+            quantity, src_stack, target_stack = instruction
+            moved_stack = self.stacks[src_stack - 1][:quantity]
+
+            if reverse:
+                moved_stack.reverse()
+
+            self.stacks[target_stack - 1] = moved_stack + self.stacks[target_stack - 1]
+            self.stacks[src_stack - 1] = self.stacks[src_stack - 1][quantity:]
+
+        return (
+            "".join([line[0] for line in self.stacks]).replace("[", "").replace("]", "")
+        )
 
 
 sol = Solution(5)
-data = sol._read_input()
-sol.supply_stacks_arrangement()
-# print(data[0], len(data[0]), data[0].split())
+b = sol.supply_stacks_arrangement(True)
+print(b)
